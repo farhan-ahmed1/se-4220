@@ -1,0 +1,13 @@
+
+
+step 1 - // setting up a virtual environment
+python3 -m venv .venv
+
+step 2 - // activating the environment
+. .venv/bin/activate
+
+step 3 - // installing dependencies
+pip install **
+
+
+

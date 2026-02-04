@@ -1,0 +1,12 @@
+.env
+.venv
+venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+
+# apple specific
+.DS_Store
+
