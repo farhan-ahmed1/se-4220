@@ -21,32 +21,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-
+from time import sleep
+import os
 import boto3
 import dotenv
 dotenv.load_dotenv()
-from time import sleep
+
+aws_acess_key = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
+aws_region = os.environ.get("AWS_REGION_NAME")
 
 
 AWS_KEY="<enter>"
 AWS_SECRET="<enter>"
 REGION="us-east-1"
 
-INSTANCE_TYPE="db.t2.micro"
+INSTANCE_TYPE="db.t4g.micro"
 ID = "MySQL-db-instance"
 USERNAME = 'root'
 PASSWORD = 'password'
 DB_PORT = 3306
-DB_SIZE = 5
+DB_SIZE = 20
 DB_ENGINE = 'mysql'
 DB_NAME = 'mytestdb'
-SECGROUP_ID="sg-1f25617b"
 
 print("Connecting to RDS")
 
-rds = boto3.client('rds', aws_access_key_id=AWS_KEY,
-                            aws_secret_access_key=AWS_SECRET,
-                            region_name=REGION)
+rds = boto3.client('rds', aws_access_key_id=aws_acess_key,
+                            aws_secret_access_key=aws_secret,
+                            region_name=aws_region)
 
 print("Creating an RDS instance")
 
@@ -57,9 +60,6 @@ response = rds.create_db_instance(DBName=DB_NAME,
             Engine=DB_ENGINE,
             MasterUsername=USERNAME,
             MasterUserPassword=PASSWORD,
-            VpcSecurityGroupIds=[
-                SECGROUP_ID,
-            ],
             Port=DB_PORT)
     
 print(response)
