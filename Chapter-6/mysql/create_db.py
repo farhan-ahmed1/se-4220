@@ -31,19 +31,14 @@ aws_acess_key = os.environ.get("AWS_ACCESS_KEY_ID")
 aws_secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
 aws_region = os.environ.get("AWS_REGION_NAME")
 
-
-AWS_KEY="<enter>"
-AWS_SECRET="<enter>"
-REGION="us-east-1"
-
 INSTANCE_TYPE="db.t4g.micro"
-ID = "MySQL-db-instance"
+ID = "photogallerydb-instance"
 USERNAME = 'root'
-PASSWORD = 'password'
+PASSWORD = 'password4220'
 DB_PORT = 3306
 DB_SIZE = 20
 DB_ENGINE = 'mysql'
-DB_NAME = 'mytestdb'
+DB_NAME = 'photogallerydb'
 
 print("Connecting to RDS")
 
