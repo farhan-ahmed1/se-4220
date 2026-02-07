@@ -10,3 +10,6 @@ __pycache__/
 # apple specific
 .DS_Store
 
+// static images
+Chapter-6/photogallery/static/media/*
+
