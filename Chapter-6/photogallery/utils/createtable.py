@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-import MySQLdb
+import mysql.connector
 DB_USERNAME = 'root'
-DB_PASSWORD = 'password'
+DB_PASSWORD = 'password4220'
 DB_NAME = 'photogallerydb'
 
-conn = MySQLdb.connect(host = "dbendpoint.us-east-1.rds.amazonaws.com",
+conn = mysql.connector.connect(host = "photogallerydb-instance.cbqcmomws8dc.us-east-2.rds.amazonaws.com",
                         user = DB_USERNAME,
                         passwd = DB_PASSWORD,
                         db = DB_NAME, 
@@ -35,6 +35,8 @@ conn = MySQLdb.connect(host = "dbendpoint.us-east-1.rds.amazonaws.com",
 
 cursor = conn.cursor ()
 cursor.execute ("SELECT VERSION()")
+version = cursor.fetchone()
+print("MySQL version:", version[0])
 
 cursor.execute ("CREATE TABLE photogallery2 ( \
     PhotoID int PRIMARY KEY NOT NULL AUTO_INCREMENT, \

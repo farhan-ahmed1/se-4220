@@ -31,20 +31,23 @@ import datetime
 import exifread
 import json
 import boto3  
-import MySQLdb
+import mysql.connector
+import dotenv
+dotenv.load_dotenv()
+
+aws_acess_key = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
+aws_region = os.environ.get("AWS_REGION_NAME")
 
 app = Flask(__name__, static_url_path="")
 
 UPLOAD_FOLDER = os.path.join(app.root_path,'static','media')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 BASE_URL="http://localhost:5000/media/"
-AWS_ACCESS_KEY="<enter>"
-AWS_SECRET_KEY="<enter>"
-REGION="us-east-1"
-BUCKET_NAME="<enter>"
-DB_HOSTNAME="photogallerydb.abc.us-east-1.rds.amazonaws.com"
+BUCKET_NAME="se4220-photo-gallery-team3-bucket"
+DB_HOSTNAME="photogallerydb-instance.cbqcmomws8dc.us-east-2.rds.amazonaws.com"
 DB_USERNAME = 'root'
-DB_PASSWORD = 'password'
+DB_PASSWORD = 'password4220'
 DB_NAME = 'photogallerydb'
 
 
@@ -74,22 +77,21 @@ def getExifData(path_name):
     return ExifData
 
 def s3uploading(filename, filenameWithPath):
-    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY,
-                            aws_secret_access_key=AWS_SECRET_KEY)
+    s3 = boto3.client('s3', aws_access_key_id=aws_acess_key,
+                            aws_secret_access_key=aws_secret)
                        
     bucket = BUCKET_NAME
     path_filename = "photos/" + filename
-    print path_filename
+    print(path_filename)
     s3.upload_file(filenameWithPath, bucket, path_filename)  
     s3.put_object_acl(ACL='public-read', 
                 Bucket=bucket, Key=path_filename)
 
-    return "http://"+BUCKET_NAME+\
-            ".s3-website-us-east-1.amazonaws.com/"+ path_filename 
+    return f"https://{bucket}.s3.us-east-2.amazonaws.com/{path_filename}" 
 
 @app.route('/', methods=['GET', 'POST'])
 def home_page():
-    conn = MySQLdb.connect (host = DB_HOSTNAME,
+    conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
                         passwd = DB_PASSWORD,
                         db = DB_NAME, 
@@ -109,7 +111,7 @@ def home_page():
         photo['URL'] = item[5]
         items.append(photo)
     conn.close()        
-    print items
+    print(items)
     return render_template('index.html', photos=items)
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -121,20 +123,20 @@ def add_photo():
         tags = request.form['tags']
         description = request.form['description']
 
-        print title,tags,description
+        print(title,tags,description)
         if file and allowed_file(file.filename):
             filename = file.filename
             filenameWithPath = os.path.join(UPLOAD_FOLDER, filename)
-            print filenameWithPath
+            print(filenameWithPath)
             file.save(filenameWithPath)            
-            uploadedFileURL = s3uploading(filename, filenameWithPath);
+            uploadedFileURL = s3uploading(filename, filenameWithPath)
             ExifData=getExifData(filenameWithPath)
-            print ExifData
+            print(ExifData)
             ts=time.time()
             timestamp = datetime.datetime.\
                         fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
-            conn = MySQLdb.connect (host = DB_HOSTNAME,
+            conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
                         passwd = DB_PASSWORD,
                         db = DB_NAME, 
@@ -151,7 +153,7 @@ def add_photo():
                         uploadedFileURL+"', '"+\
                         json.dumps(ExifData)+"');"
             
-            print statement
+            print(statement)
             result = cursor.execute(statement)
             conn.commit()
             conn.close()
@@ -162,7 +164,7 @@ def add_photo():
 
 @app.route('/<int:photoID>', methods=['GET'])
 def view_photo(photoID):    
-    conn = MySQLdb.connect (host = DB_HOSTNAME,
+    conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
                         passwd = DB_PASSWORD,
                         db = DB_NAME, 
@@ -195,7 +197,7 @@ def view_photo(photoID):
 @app.route('/search', methods=['GET'])
 def search_page():
     query = request.args.get('query', None)    
-    conn = MySQLdb.connect (host = DB_HOSTNAME,
+    conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
                         passwd = DB_PASSWORD,
                         db = DB_NAME, 
@@ -224,7 +226,7 @@ def search_page():
         photo['ExifData']=item[6]
         items.append(photo)
     conn.close()        
-    print items
+    print(items)
     return render_template('search.html', photos=items, 
                             searchquery=query)
 
