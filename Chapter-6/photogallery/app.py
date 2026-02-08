@@ -24,8 +24,10 @@ SOFTWARE.
 
 #!flask/bin/python
 from flask import Flask, jsonify, abort, request, make_response, url_for
-from flask import render_template, redirect
-import os    
+from flask import render_template, redirect, session
+from functools import wraps
+from flask_bcrypt import Bcrypt
+import os
 import time
 import datetime
 import exifread
@@ -40,6 +42,8 @@ aws_secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
 aws_region = os.environ.get("AWS_REGION_NAME")
 
 app = Flask(__name__, static_url_path="")
+app.secret_key = 'photogallery-secret-key-4220'
+bcrypt = Bcrypt(app)
 
 UPLOAD_FOLDER = os.path.join(app.root_path,'static','media')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
@@ -87,9 +91,81 @@ def s3uploading(filename, filenameWithPath):
     s3.put_object_acl(ACL='public-read', 
                 Bucket=bucket, Key=path_filename)
 
-    return f"https://{bucket}.s3.us-east-2.amazonaws.com/{path_filename}" 
+    return f"https://{bucket}.s3.us-east-2.amazonaws.com/{path_filename}"
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ''
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = mysql.connector.connect(host=DB_HOSTNAME,
+                    user=DB_USERNAME, passwd=DB_PASSWORD,
+                    db=DB_NAME, port=3306)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE Username=%s;", (username,))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user and bcrypt.check_password_hash(user[2], password):
+            session['username'] = username
+            return redirect('/')
+        else:
+            error = 'Invalid username or password.'
+
+    return render_template('login.html', error=error)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = ''
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm = request.form['confirm']
+
+        if password != confirm:
+            error = 'Passwords do not match.'
+        elif len(username) < 3:
+            error = 'Username must be at least 3 characters.'
+        elif len(password) < 6:
+            error = 'Password must be at least 6 characters.'
+        else:
+            conn = mysql.connector.connect(host=DB_HOSTNAME,
+                        user=DB_USERNAME, passwd=DB_PASSWORD,
+                        db=DB_NAME, port=3306)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE Username=%s;", (username,))
+            existing = cursor.fetchone()
+
+            if existing:
+                conn.close()
+                error = 'Username already exists.'
+            else:
+                hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+                cursor.execute("INSERT INTO users (Username, Password) VALUES (%s, %s);",
+                               (username, hashed))
+                conn.commit()
+                conn.close()
+                return redirect('/login')
+
+    return render_template('register.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect('/login')
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def home_page():
     conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
@@ -115,6 +191,7 @@ def home_page():
     return render_template('index.html', photos=items)
 
 @app.route('/add', methods=['GET', 'POST'])
+@login_required
 def add_photo():
     if request.method == 'POST':    
         uploadedFileURL=''
@@ -163,6 +240,7 @@ def add_photo():
         return render_template('form.html')
 
 @app.route('/<int:photoID>', methods=['GET'])
+@login_required
 def view_photo(photoID):    
     conn = mysql.connector.connect (host = DB_HOSTNAME,
                         user = DB_USERNAME,
@@ -195,6 +273,7 @@ def view_photo(photoID):
                             tags=tags, exifdata=exifdata)
 
 @app.route('/search', methods=['GET'])
+@login_required
 def search_page():
     query = request.args.get('query', None)    
     conn = mysql.connector.connect (host = DB_HOSTNAME,
