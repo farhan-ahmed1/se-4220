@@ -1,12 +1,12 @@
 Some useful commands for set up and other stuff
 
-step 1 - // setting up a virtual environment
+step 1 - // setting up a virtual environment - only run once
 python3 -m venv .venv
 
 step 2 - // activating the environment
 source .venv/bin/activate
 
-step 3 - // install requirements
+step 3 - // install requirements - run once
 pip install -r requirements.txt
 
 // installing dependencies
@@ -15,5 +15,10 @@ pip install **
 // running python files
 python3 <file_name>
 
+// deactivating environment
+deactivate
 
+logging in with an account - temp login
+username - admin
+password - Password55
 
