@@ -24,11 +24,13 @@ SOFTWARE.
 
 #!flask/bin/python
 from flask import Flask, jsonify, abort, request, make_response, url_for
-from flask import render_template, redirect, session
+from flask import render_template, redirect, session, send_file
 from functools import wraps
 from flask_bcrypt import Bcrypt
 from boto3.dynamodb.conditions import Key, Attr
+from urllib.parse import urlparse
 import os
+import io
 import uuid
 import time
 import datetime
@@ -237,6 +239,32 @@ def view_photo(photoID):
 
     return render_template('photodetail.html', photo=photo,
                             tags=tags, exifdata=exifdata)
+
+@app.route('/photo/<string:photoID>/download', methods=['GET'])
+@login_required
+def download_photo(photoID):
+    resp = photos_table.get_item(Key={
+        'user_id':  session['username'],
+        'photo_id': photoID,
+    })
+    item = resp.get('Item')
+    if not item:
+        abort(404)
+
+    s3_key = urlparse(item['url']).path.lstrip('/')
+    filename = s3_key.split('/')[-1]
+
+    s3 = boto3.client('s3', aws_access_key_id=aws_acess_key,
+                             aws_secret_access_key=aws_secret,
+                             region_name=aws_region)
+    s3_obj = s3.get_object(Bucket=BUCKET_NAME, Key=s3_key)
+
+    return send_file(
+        io.BytesIO(s3_obj['Body'].read()),
+        download_name=filename,
+        as_attachment=True,
+        mimetype=s3_obj['ContentType']
+    )
 
 @app.route('/search', methods=['GET'])
 @login_required

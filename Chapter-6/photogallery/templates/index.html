@@ -62,10 +62,16 @@
               </div>
               <div class="theme-portfolio-title-heading">
                 <h4 class="theme-portfolio-title">
-                  <a href="/{{p.PhotoID}}">{{p.Title}}</a>
+                  <a href="/photo/{{p.PhotoID}}">{{p.Title}}</a>
                 </h4>
                 <span class="theme-portfolio-subtitle">
                 {{p.CreationTime}}</span>
+                <div style="margin-top: 6px;">
+                  <a href="/photo/{{p.PhotoID}}/download"
+                     class="btn btn-primary btn-xs">
+                    <i class="fa fa-download"></i> Download
+                  </a>
+                </div>
               </div>
             </div>
             {% endfor %}
