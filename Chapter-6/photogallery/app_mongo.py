@@ -1,0 +1,284 @@
+'''
+MIT License
+
+Copyright (c) 2019 Arshdeep Bahga and Vijay Madisetti
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
+#!flask/bin/python
+from flask import Flask, jsonify, abort, request, make_response, url_for
+from flask import render_template, redirect, session, send_file
+from functools import wraps
+from flask_bcrypt import Bcrypt
+from urllib.parse import urlparse
+from pymongo import MongoClient
+import certifi
+import re
+import uuid
+import os
+import io
+import time
+import datetime
+import exifread
+import json
+import boto3
+import dotenv
+dotenv.load_dotenv()
+
+aws_acess_key = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
+aws_region = os.environ.get("AWS_REGION_NAME")
+
+app = Flask(__name__, static_url_path="")
+app.secret_key = 'photogallery-secret-key-4220'
+bcrypt = Bcrypt(app)
+
+UPLOAD_FOLDER = os.path.join(app.root_path,'static','media')
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+BASE_URL="http://localhost:5000/media/"
+BUCKET_NAME="se4220-photo-gallery-team3-bucket"
+
+MONGO_URI = os.environ.get("MONGO_URI")
+mongo_client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+db           = mongo_client['photogallerydb']
+photos_col   = db['photos']
+users_col    = db['users']
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.errorhandler(400)
+def bad_request(error):
+    return make_response(jsonify({'error': 'Bad request'}), 400)
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+def getExifData(path_name):
+    f = open(path_name, 'rb')
+    tags = exifread.process_file(f)
+    ExifData={}
+    for tag in tags.keys():
+        if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 
+                       'Filename', 'EXIF MakerNote'):
+            key="%s"%(tag)
+            val="%s"%(tags[tag])
+            ExifData[key]=val
+    return ExifData
+
+def s3uploading(filename, filenameWithPath):
+    s3 = boto3.client('s3', aws_access_key_id=aws_acess_key,
+                            aws_secret_access_key=aws_secret)
+                       
+    bucket = BUCKET_NAME
+    path_filename = "photos/" + filename
+    print(path_filename)
+    s3.upload_file(filenameWithPath, bucket, path_filename)  
+    s3.put_object_acl(ACL='public-read', 
+                Bucket=bucket, Key=path_filename)
+
+    return f"https://{bucket}.s3.us-east-2.amazonaws.com/{path_filename}"
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ''
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = users_col.find_one({'_id': username})
+
+        if user and bcrypt.check_password_hash(user['password'], password):
+            session['username'] = username
+            return redirect('/')
+        else:
+            error = 'Invalid username or password.'
+
+    return render_template('login.html', error=error)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = ''
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm = request.form['confirm']
+
+        if password != confirm:
+            error = 'Passwords do not match.'
+        elif len(username) < 3:
+            error = 'Username must be at least 3 characters.'
+        elif len(password) < 6:
+            error = 'Password must be at least 6 characters.'
+        else:
+            existing = users_col.find_one({'_id': username})
+
+            if existing:
+                error = 'Username already exists.'
+            else:
+                hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+                users_col.insert_one({'_id': username, 'password': hashed})
+                return redirect('/login')
+
+    return render_template('register.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect('/login')
+
+@app.route('/', methods=['GET', 'POST'])
+@login_required
+def home_page():
+    results = list(photos_col.find({'user_id': session['username']}))
+    items = []
+    for item in results:
+        photo = {
+            'PhotoID':      str(item['_id']),
+            'CreationTime': item['creation_time'],
+            'Title':        item['title'],
+            'Description':  item['description'],
+            'Tags':         item['tags'],
+            'URL':          item['url'],
+        }
+        items.append(photo)
+    print(items)
+    return render_template('index.html', photos=items)
+
+@app.route('/add', methods=['GET', 'POST'])
+@login_required
+def add_photo():
+    if request.method == 'POST':    
+        uploadedFileURL=''
+        file = request.files['imagefile']
+        title = request.form['title']
+        tags = request.form['tags']
+        description = request.form['description']
+
+        print(title,tags,description)
+        if file and allowed_file(file.filename):
+            filename = file.filename
+            filenameWithPath = os.path.join(UPLOAD_FOLDER, filename)
+            print(filenameWithPath)
+            file.save(filenameWithPath)            
+            uploadedFileURL = s3uploading(filename, filenameWithPath)
+            ExifData=getExifData(filenameWithPath)
+            print(ExifData)
+            ts=time.time()
+            timestamp = datetime.datetime.\
+                        fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+            photos_col.insert_one({
+            '_id':          str(uuid.uuid4()),
+            'user_id':      session['username'],
+            'creation_time': timestamp,
+            'title':        title,
+            'description':  description,
+            'tags':         tags,
+            'url':          uploadedFileURL,
+            'exif':         ExifData,
+        })
+
+        return redirect('/')
+    else:
+        return render_template('form.html')
+
+@app.route('/photo/<string:photoID>', methods=['GET'])
+@login_required
+def view_photo(photoID):
+    item = photos_col.find_one({'_id': photoID, 'user_id': session['username']})
+    if not item:
+        abort(404)
+
+    photo = {
+        'PhotoID':      str(item['_id']),
+        'CreationTime': item['creation_time'],
+        'Title':        item['title'],
+        'Description':  item['description'],
+        'Tags':         item['tags'],
+        'URL':          item['url'],
+        'ExifData':     item.get('exif', {}),
+    }   
+    tags     = photo['Tags'].split(',')
+    exifdata = photo['ExifData']
+
+    return render_template('photodetail.html', photo=photo,
+                            tags=tags, exifdata=exifdata)
+
+@app.route('/photo/<string:photoID>/download', methods=['GET'])
+@login_required
+def download_photo(photoID):
+    item = photos_col.find_one({'_id': photoID, 'user_id': session['username']})
+    if not item:
+        abort(404)
+
+    s3_key = urlparse(item['url']).path.lstrip('/')
+    filename = s3_key.split('/')[-1]
+
+    s3 = boto3.client('s3', aws_access_key_id=aws_acess_key,
+                             aws_secret_access_key=aws_secret,
+                             region_name=aws_region)
+    s3_obj = s3.get_object(Bucket=BUCKET_NAME, Key=s3_key)
+
+    return send_file(
+        io.BytesIO(s3_obj['Body'].read()),
+        download_name=filename,
+        as_attachment=True,
+        mimetype=s3_obj['ContentType']
+    )
+
+@app.route('/search', methods=['GET'])
+@login_required
+def search_page():
+    query = request.args.get('query', None)
+    pattern = re.compile(query, re.IGNORECASE)
+    results = list(photos_col.find({'$or': [
+        {'title':       pattern},
+        {'description': pattern},
+        {'tags':        pattern},
+    ]}))
+    items = []
+    for item in results:
+        photo = {}
+        photo['PhotoID']      = str(item['_id'])
+        photo['CreationTime'] = item['creation_time']
+        photo['Title']        = item['title']
+        photo['Description']  = item['description']
+        photo['Tags']         = item['tags']
+        photo['URL']          = item['url']
+        photo['ExifData']     = item.get('exif', {})
+        items.append(photo)
+    print(items)
+    return render_template('search.html', photos=items,
+                            searchquery=query)
+
+if __name__ == '__main__':
+    app.run(debug=True, host="0.0.0.0", port=5000)
