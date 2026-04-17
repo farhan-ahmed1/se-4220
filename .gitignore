@@ -1,17 +1,49 @@
+# ---- Secrets & credentials (NEVER commit these) ----
+# Catches .env, .env.gcp, .env.local, .env.production, etc.
 .env
-.venv
+.env.*
+!.env.example
+!.env.*.example
+
+# Google Cloud service-account keys (match any JSON that looks like a key)
+gcp-key.json
+**/gcp-key*.json
+*-service-account.json
+service-account-*.json
+
+# AWS / generic credential files
+credentials
+credentials.json
+aws-credentials*
+*.pem
+*.key
+
+# ---- Python ----
+.venv/
 venv/
-*.pyc
+env/
 __pycache__/
+*.pyc
 *.pyo
 *.pyd
 .Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
 
-gcp-key.json
-
-# apple specific
+# ---- Editor / OS ----
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
 
-// static images
+# ---- App Engine / Cloud Build ----
+.gcloud/
+
+# ---- Project-specific ----
+# Locally-saved uploads (we now write to /tmp on App Engine, but old code
+# wrote to static/media/ during local dev -- don't commit the test photos).
 Chapter-6/photogallery/static/media/*
-
+!Chapter-6/photogallery/static/media/.gitkeep

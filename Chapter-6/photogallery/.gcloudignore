@@ -1,0 +1,45 @@
+# Files/dirs not uploaded to App Engine. Anything listed here is invisible
+# to the running app. NOTE: `gcp-key.json` is intentionally NOT ignored --
+# we want it in the deployment bundle so the app can auth to GCS.
+
+# Python virtualenvs (huge; App Engine installs requirements.txt server-side).
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# OS / editor junk
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Local dev env files (credentials live in app.yaml's env_variables on GAE).
+.env
+.env.gcp
+
+# Old AWS + GCE deployment entry points -- not used on App Engine.
+app.py
+app_mongo.py
+app_gcp.py
+
+# Utility scripts are DB-admin helpers you run from your laptop, not from
+# inside the web app. Keep them out of the deploy bundle.
+utils/
+
+# Anything previously saved to static/media/ during local dev -- App Engine
+# now writes uploads to /tmp, so this folder should be empty in prod.
+static/media/*
+!static/media/.gitkeep
+
+# Logs, coverage, test artifacts
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
