@@ -1,0 +1,13 @@
+Flask==2.2.5
+Werkzeug==2.2.3
+Jinja2==3.1.6
+MarkupSafe==2.1.5
+itsdangerous==2.1.2
+click==8.1.8
+
+flask-bcrypt==1.0.1
+mysql-connector-python==8.0.33
+google-cloud-storage>=2.16.0
+python-dotenv==1.0.1
+
+gunicorn==21.2.0

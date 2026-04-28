@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Post a listing &mdash; Ames Classifieds{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Post a new listing</h1>
+
+{% if errors %}
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<form method="get" class="mb-4">
+  <label class="form-label">Choose a category</label>
+  <div class="input-group">
+    <select class="form-select" name="category" onchange="this.form.submit()">
+      <option value="">-- pick one --</option>
+      {% for slug, c in categories.items() %}
+        <option value="{{ slug }}" {% if slug == selected %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn btn-secondary" type="submit">Go</button></noscript>
+  </div>
+</form>
+
+{% if cat_def %}
+  <form method="post" enctype="multipart/form-data" class="row g-3" novalidate>
+    <input type="hidden" name="category" value="{{ selected }}">
+
+    <div class="col-12">
+      <label class="form-label">Title</label>
+      <input type="text" class="form-control" name="title" required value="{{ form.title or '' }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Price (USD)</label>
+      <input type="number" step="0.01" min="0" class="form-control" name="price" required value="{{ form.price or '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">City</label>
+      <input type="text" class="form-control" name="city" required value="{{ form.city or 'Ames, IA' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Phone</label>
+      <input type="tel" class="form-control" name="phone" required value="{{ form.phone or '' }}">
+    </div>
+
+    {% for spec in cat_def.attributes %}
+      <div class="col-md-6">
+        <label class="form-label">{{ spec.label }}</label>
+        {% if spec.type == 'select' %}
+          <select class="form-select" name="{{ spec.key }}" required>
+            <option value="">-- choose --</option>
+            {% for opt in spec.options %}
+              <option value="{{ opt }}" {% if form[spec.key] == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        {% elif spec.type == 'number' %}
+          <input type="number" step="any" class="form-control" name="{{ spec.key }}" required value="{{ form[spec.key] or '' }}">
+        {% else %}
+          <input type="text" class="form-control" name="{{ spec.key }}" required value="{{ form[spec.key] or '' }}">
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="col-12">
+      <label class="form-label">Description</label>
+      <textarea class="form-control" name="description" rows="5" required>{{ form.description or '' }}</textarea>
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Image (optional)</label>
+      <input type="file" class="form-control" name="image" accept="image/*">
+      <div class="form-text">PNG, JPG, GIF, or WEBP. Stored in Google Cloud Storage.</div>
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">Publish listing</button>
+      <a href="{{ url_for('home') }}" class="btn btn-link">Cancel</a>
+    </div>
+  </form>
+{% else %}
+  <p class="text-muted">Pick a category above to see the listing form.</p>
+{% endif %}
+{% endblock %}

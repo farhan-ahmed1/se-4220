@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} &mdash; Ames Classifieds{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('view_section', section_slug=section.slug) }}">{{ section.name }}</a></li>
+    <li class="breadcrumb-item active">{{ category.name }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="mb-0">{{ category.name }}</h1>
+  {% if current_user %}
+    <a class="btn btn-primary"
+       href="{{ url_for('new_listing', category=category.slug) }}">+ Post in {{ category.name }}</a>
+  {% endif %}
+</div>
+
+{% if listings %}
+  <div class="row g-3">
+    {% for l in listings %}
+      <div class="col-md-6 col-lg-4">
+        <a class="card h-100 text-decoration-none text-reset"
+           href="{{ url_for('view_listing', listing_id=l.id) }}">
+          {% if l.image_url %}
+            <img src="{{ l.image_url }}" class="card-img-top listing-thumb" alt="">
+          {% else %}
+            <div class="card-img-top listing-thumb bg-light d-flex align-items-center justify-content-center text-muted">
+              No image
+            </div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title mb-1">{{ l.title }}</h5>
+            <p class="mb-1 fw-bold">${{ '{:,.2f}'.format(l.price) }}</p>
+            <p class="text-muted small mb-0">{{ l.city }} &middot; {{ l.created_at.strftime('%b %d, %Y') }}</p>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-light border">No listings yet in this category.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} &mdash; Ames Classifieds{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('view_section', section_slug=listing.section_slug) }}">{{ listing.section_name }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('view_category', category_slug=listing.category_slug) }}">{{ listing.category_name }}</a></li>
+    <li class="breadcrumb-item active">{{ listing.title }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    {% if listing.image_url %}
+      <img src="{{ listing.image_url }}" class="img-fluid rounded border" alt="{{ listing.title }}">
+    {% else %}
+      <div class="bg-light border rounded text-center py-5 text-muted">No image provided</div>
+    {% endif %}
+  </div>
+  <div class="col-md-5">
+    <h1 class="h3">{{ listing.title }}</h1>
+    <p class="display-6 fw-bold mb-3">${{ '{:,.2f}'.format(listing.price) }}</p>
+
+    <table class="table table-sm">
+      <tbody>
+        <tr><th scope="row" class="w-50">City</th><td>{{ listing.city }}</td></tr>
+        <tr><th scope="row">Phone</th><td>{{ listing.phone }}</td></tr>
+        {% for spec in attribute_defs %}
+          {% set val = listing.attributes.get(spec.key) %}
+          {% if val is not none %}
+            <tr><th scope="row">{{ spec.label }}</th><td>{{ val }}</td></tr>
+          {% endif %}
+        {% endfor %}
+        <tr><th scope="row">Posted</th><td>{{ listing.created_at.strftime('%b %d, %Y') }}{% if listing.posted_by %} by {{ listing.posted_by }}{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<hr class="my-4">
+<h2 class="h5">Description</h2>
+<p class="text-pre-wrap">{{ listing.description }}</p>
+{% endblock %}

@@ -1,0 +1,12 @@
+.listing-thumb {
+  height: 180px;
+  object-fit: cover;
+}
+
+.text-pre-wrap {
+  white-space: pre-wrap;
+}
+
+main.container {
+  min-height: calc(100vh - 200px);
+}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-4">404</h1>
+  <p class="lead">That page doesn't exist.</p>
+  <a class="btn btn-primary" href="{{ url_for('home') }}">Back home</a>
+</div>
+{% endblock %}

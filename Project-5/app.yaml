@@ -1,0 +1,36 @@
+# App Engine Standard config for the Flask classifieds site.
+# Deploy with:  gcloud app deploy app.yaml
+#
+# NOTE: env_variables below contain DB credentials and Flask's session secret
+# in plaintext. Acceptable for a class demo; rotate / move to Secret Manager
+# for anything longer-lived.
+
+runtime: python312
+
+entrypoint: gunicorn -b :$PORT --workers 2 --threads 4 --timeout 60 main:app
+
+env_variables:
+  DB_HOSTNAME: "136.116.60.71"
+  DB_USERNAME: "classifieds_user"
+  DB_PASSWORD: "123456pass"
+  DB_NAME:     "classifieds_db"
+  DB_PORT:     "3306"
+  GCS_BUCKET:  "se4220-classifieds-bucket"
+  FLASK_SECRET_KEY: "0442770d3f2fe491437635a47675f686a9f22b686d02ae5485b5ecd0a2591e5b"
+
+handlers:
+  - url: /static
+    static_dir: static
+    secure: always
+
+  - url: /.*
+    script: auto
+    secure: always
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 2
+  target_cpu_utilization: 0.65
+
+inbound_services:
+  - warmup

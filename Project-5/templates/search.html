@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Search &mdash; Ames Classifieds{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Search results {% if q %}for "{{ q }}"{% endif %}</h1>
+
+{% if not q %}
+  <p class="text-muted">Type a query in the search bar above to find listings.</p>
+{% elif not listings %}
+  <div class="alert alert-light border">No listings matched your search.</div>
+{% else %}
+  <div class="row g-3">
+    {% for l in listings %}
+      <div class="col-md-6 col-lg-4">
+        <a class="card h-100 text-decoration-none text-reset"
+           href="{{ url_for('view_listing', listing_id=l.id) }}">
+          {% if l.image_url %}
+            <img src="{{ l.image_url }}" class="card-img-top listing-thumb" alt="">
+          {% else %}
+            <div class="card-img-top listing-thumb bg-light d-flex align-items-center justify-content-center text-muted">
+              No image
+            </div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title mb-1">{{ l.title }}</h5>
+            <p class="mb-1 fw-bold">${{ '{:,.2f}'.format(l.price) }}</p>
+            <p class="text-muted small mb-0">
+              {{ l.city }} &middot; {{ l.category_name }}
+            </p>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
