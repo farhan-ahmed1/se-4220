@@ -11,9 +11,6 @@ account; registered users can publish new listings (with full server-side
 validation that all fields are filled in). The entire stack runs on Google
 Cloud Platform.
 
-The site is intentionally simple — it is a class demo, not a production
-service. Best-known, well-documented technologies were chosen so that the
-code is easy to read in 30 minutes.
 
 ## 2. System Architecture Diagram
 
@@ -45,8 +42,8 @@ graph LR
 | Hosting | GCP App Engine Standard (Python 3.12) | Zero-ops hosting with free-tier scale-to-zero. `gcloud app deploy` is one command. |
 | Relational DB | Cloud SQL for MySQL 8 | Listings have a fixed shape (title, price, city, phone…) plus a small JSON blob for category-specific fields. Familiar SQL is easier to demo than NoSQL. |
 | Object storage | Google Cloud Storage | Stores user-uploaded listing photos. Objects are made public so they can be served via a plain `<img src>` tag. |
-| Auth | Flask sessions + `flask-bcrypt` | Username/password stored as a bcrypt hash in the `users` table. Same pattern as the photogallery project. Adequate for a class demo. |
-| Secrets / config | App Engine `env_variables` + local `.env` | Plain-text in `app.yaml` is acceptable for a demo; `python-dotenv` loads the local `.env` outside App Engine. |
+| Auth | Flask sessions + `flask-bcrypt` | Username/password stored as a bcrypt hash in the `users` table. Same pattern as the photogallery project. |
+| Secrets / config | App Engine `env_variables` + local `.env` |  `python-dotenv` loads the local `.env` outside App Engine. |
 
 ## 4. Data Model
 
@@ -91,7 +88,6 @@ erDiagram
         json attributes
         datetime created_at
     }
-}
 ```
 
 ### Why a JSON column for category-specific attributes?
@@ -176,24 +172,6 @@ Project-5/
 └── docs/architecture.md  # This file
 ```
 
-## 7. Security & Production Notes (out of scope for the demo)
-
-The project is intentionally simple. Things that would be required for a
-production deployment but are deliberately skipped here:
-
-- **Secrets**: `app.yaml` `env_variables` are plaintext. Move to Secret
-  Manager and bind via the Secret Manager API.
-- **CSRF protection**: Forms have no CSRF token. Use Flask-WTF.
-- **DB connection**: Connecting to Cloud SQL by public IP + password is
-  fine for a class demo; production should use Cloud SQL Auth Proxy or a
-  Unix socket.
-- **Validation**: We check fields are non-empty and numbers parse, but no
-  format validation on phone numbers, profanity filtering, or rate
-  limiting.
-- **Image handling**: Uploaded files are stored at original size and made
-  public. Production should generate thumbnails and use signed URLs.
-- **Pagination, search relevance, geolocation**: Not implemented.
-
 ## 8. Initial Data
 
 `seed.py` populates:
@@ -203,5 +181,3 @@ production deployment but are deliberately skipped here:
 - 75 listings (3 per category) with realistic-looking data
 - 1 demo user: `admin` / `Password55` (used as the `posted_by` user for
   the seed listings)
-
-This satisfies the assignment's minimum data requirements out of the box.

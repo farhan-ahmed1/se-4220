@@ -65,9 +65,3 @@ Your website will have existing data by the time of your final project delivery 
 You can create the initial data manually or use any script or tool to automate populating your database.
 
 Please also create diagrams of system architecture and a technical report of the technologies used and how it works in markdown.
-
-## Clarifications
-
-This is a class demo. Therefore it should be as simple as possible. You don't need to worry about security,
-heavy validation of user input, scalability, robust authentication, location features or advanced UI.
-Pick well-known and simple technologies. Please write all the necessary files in this directory Project-5.

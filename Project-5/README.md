@@ -1,6 +1,6 @@
 # Ames Classifieds (SE 4220 Project 5)
 
-A small Craigslist-style classified ads website for Ames, Iowa, deployed on
+A Craigslist-style classified ads website for Ames, Iowa, deployed on
 Google Cloud Platform. See [`ASSIGNMENT.md`](ASSIGNMENT.md) for the project
 brief and [`docs/architecture.md`](docs/architecture.md) for the technical
 report and architecture diagrams.
