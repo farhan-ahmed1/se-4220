@@ -69,9 +69,15 @@ _gcs_client = None
 
 
 def get_gcs_client():
+    # On the GCE VM (and App Engine), the attached service account provides
+    # Application Default Credentials -- no key file needed. Fall back to
+    # GCP_KEY_FILE only if it's actually present on disk (local dev).
     global _gcs_client
     if _gcs_client is None:
-        _gcs_client = storage.Client.from_service_account_json(GCP_KEY_FILE)
+        if GCP_KEY_FILE and os.path.exists(GCP_KEY_FILE):
+            _gcs_client = storage.Client.from_service_account_json(GCP_KEY_FILE)
+        else:
+            _gcs_client = storage.Client()
     return _gcs_client
 
 
@@ -110,8 +116,10 @@ def gcs_upload(filename, filenameWithPath):
     bucket = client.bucket(GCS_BUCKET)
     blob = bucket.blob(f"photos/{filename}")
     blob.upload_from_filename(filenameWithPath)
-    blob.make_public()
-    return blob.public_url
+    # Don't call blob.make_public(): the Terraform-managed bucket uses
+    # uniform bucket-level access, so ACLs are disabled. Public read is
+    # granted at the bucket level instead (allUsers -> objectViewer).
+    return f"https://storage.googleapis.com/{GCS_BUCKET}/{blob.name}"
 
 
 def login_required(f):
@@ -389,4 +397,14 @@ def warmup():
     return '', 200
 
 
+# Generic health check for the GCE VM deployment (Project Final / Terraform).
+# Kept DB-free on purpose so a transient Cloud SQL hiccup doesn't take the
+# instance out of rotation.
+@app.route('/health')
+def health():
+    return 'ok', 200
+
+
 # No app.run() block: App Engine Standard invokes gunicorn per app.yaml.
+# For the GCE VM deployment, systemd runs gunicorn directly (see
+# terraform/startup.sh).

@@ -1,0 +1,66 @@
+Objective
+Automating the Gallery application's cloud
+infrastructure deployment on Google Cloud Platform (GCP) using Terraform. Students must provision
+compute, network, and database resources while implementing DevOps best practices.
+
+Architecture Components
+Implement the following infrastructure components through Terraform:
+
+1. Terraform Configuration Requirements
+• Modular code structure with separate main, variables, and output files.
+• Google Provider configuration (version 4.0+).
+• Remote state management using GCS backend.
+• Parameterization through variables.tf with validation rules.
+
+GCP Resource Specifications
+• VPC network with custom subnet (10.0.0.0/16)
+• Compute Engine VM (e2-standard-2)
+• Cloud SQL MySQL instance (2nd gen, db-n1-standard-1)
+• Firewall rules allowing HTTP/HTTPS traffic
+• Service account with least-privilege IAM roles
+
+3. Application Integration
+• Reuse Gallery application code from Project 4
+• Configure VM startup script for application deployment
+• Establish a secure database connection from the application
+• Implement health check endpoint
+
+4. Hint
+Use the Gallery application with the same code that you implemented in your previous project (Project
+4).
+
+Implementation Steps
+1. Infrastructure Provisioning
+1. Initialize Terraform workspace with GCS backend
+2. Define network infrastructure (VPC, subnet, firewall)
+3. Provision compute resources with public IP access
+4. Configure Cloud SQL instance with private networking
+5. Output application endpoint and database connection details
+
+2. Deployment Automation
+1. Create app-deploy.tf for application deployment
+2. Implement cloud-init script for dependency installation
+3. Configure automatic application restart on VM boot
+4. Set up database schema initialization script
+5. Validate end-to-end functionality through Terraform outputs
+
+Deliverables
+Submit the following via Canvas:
+1. Terraform Codebase
+• Complete set of .tf files (main.tf, variables.tf, outputs.tf)
+• README.md with setup instructions and architecture diagram
+• requirements.tf specifying provider versions
+
+2. Validation Report
+• Screenshots of:
+a) Terraform apply output
+b) GCP Console resources
+c) Working application interface
+d) Database connection test
+• Performance metrics: Deployment time and resource costs
+
+3. Video Demonstration
+A 5-minute screen recording showing:
+e) Terraform workflow from init to destroy
+f) Application functionality tests
+g) Infrastructure validation in GCP Console

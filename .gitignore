@@ -42,6 +42,22 @@ htmlcov/
 # ---- App Engine / Cloud Build ----
 .gcloud/
 
+# ---- Terraform ----
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+.terraform.lock.hcl
+# Real tfvars files (commit *.tfvars.example instead)
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+# Tarballs that Terraform's archive_file produces for VM provisioning
+**/terraform/dist/
+
 # ---- Project-specific ----
 # Locally-saved uploads (we now write to /tmp on App Engine, but old code
 # wrote to static/media/ during local dev -- don't commit the test photos).

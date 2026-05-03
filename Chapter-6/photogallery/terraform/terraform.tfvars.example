@@ -1,0 +1,13 @@
+// Copy to terraform.tfvars and fill in real values. terraform.tfvars is
+// gitignored so secrets stay out of git.
+
+project_id       = "your-gcp-project-id"
+region           = "us-central1"
+zone             = "us-central1-a"
+name_prefix      = "photogallery"
+
+db_password      = "change-me-min-12-chars"
+flask_secret_key = "change-me-some-long-random-string"
+
+// Tighten before grading; this default leaves SSH wide open.
+ssh_source_ranges = ["0.0.0.0/0"]
