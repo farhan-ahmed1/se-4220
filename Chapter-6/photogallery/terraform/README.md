@@ -108,27 +108,6 @@ curl "$(terraform output -raw health_url)"        # -> ok
 open  "$(terraform output -raw app_url)"          # register a user, upload a photo
 ```
 
-## Validating the deliverables
-
-The assignment asks for screenshots of:
-
-1. **`terraform apply` output** — capture the tail of the apply with the
-   `Apply complete!` line and the outputs.
-2. **GCP Console resources** — VPC Networks, Compute Engine, and Cloud SQL
-   pages should each show one new resource.
-3. **Working application** — the app URL with at least one uploaded photo
-   visible.
-4. **Database connection test** — from the VM:
-
-   ```bash
-   gcloud compute ssh photogallery-vm --zone=us-central1-a
-   mysql -h <db_private_ip> -u photogallery -p photogallerydb \
-     -e "SHOW TABLES; SELECT COUNT(*) FROM photogallery;"
-   ```
-
-The 5-minute video should walk through `terraform init → plan → apply →
-register/upload in browser → terraform destroy`.
-
 ## Tear down
 
 ```bash
