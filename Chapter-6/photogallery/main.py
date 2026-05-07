@@ -71,7 +71,11 @@ _gcs_client = None
 def get_gcs_client():
     global _gcs_client
     if _gcs_client is None:
-        _gcs_client = storage.Client.from_service_account_json(GCP_KEY_FILE)
+        if GCP_KEY_FILE and os.path.exists(GCP_KEY_FILE):
+            _gcs_client = storage.Client.from_service_account_json(GCP_KEY_FILE)
+        else:
+            # On Compute Engine the attached service account provides ADC.
+            _gcs_client = storage.Client()
     return _gcs_client
 
 
@@ -382,11 +386,22 @@ def search_page():
                             searchquery=query)
 
 
-# Lightweight health check so `gcloud app deploy`'s startup probes
-# (and any future uptime checks) don't touch MySQL.
-@app.route('/_ah/warmup')
-def warmup():
-    return '', 200
+@app.route('/health')
+def health_check():
+    # Liveness: process is up. Cheap, no I/O.
+    return jsonify({'status': 'ok'}), 200
+
+
+@app.route('/health/ready')
+def readiness_check():
+    # Readiness: DB reachable. Terraform waits on this.
+    try:
+        conn = get_db()
+        conn.ping(reconnect=False)
+        conn.close()
+        return jsonify({'status': 'ready'}), 200
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 503
 
 
 # No app.run() block: App Engine Standard invokes gunicorn per app.yaml.
