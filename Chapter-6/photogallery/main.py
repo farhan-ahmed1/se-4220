@@ -114,7 +114,6 @@ def gcs_upload(filename, filenameWithPath):
     bucket = client.bucket(GCS_BUCKET)
     blob = bucket.blob(f"photos/{filename}")
     blob.upload_from_filename(filenameWithPath)
-    blob.make_public()
     return blob.public_url
 
 
